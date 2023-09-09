@@ -85,9 +85,10 @@ export class AppService {
 
     startTrain = (train: ITrainQueue) => {
         return new Promise((res, rej) => {
+            train.status = TRAIN_STATUS.IN_PROGRESS;
+
             const childProcess = spawn(
-                `sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName}`,
-                // `pwd`,
+                `sh`, [`${this.configService.get('SERVICE_PATH')}/start.sh`, train.loraName],
                 { detached: true }
             );
 
