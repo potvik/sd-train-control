@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
+import kill from 'tree-kill';
 
 export enum TRAIN_STATUS {
     WAITING = 'WAITING',
@@ -123,6 +124,9 @@ export class AppService {
             throw new Error('Train not started');
         }
 
-        return train.process.kill();
+        train.process.kill();
+        kill(train.process.pid);
+
+        return true;
     }
 }
