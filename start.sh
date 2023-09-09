@@ -13,6 +13,9 @@ echo Started train for Lora: $LORA_NAME
 
 echo $$ > $OUT/$LORA_NAME.lock
 
+rm -rf $KOHYA_SS_OUTPUTS/*
+rm -rf $KOHYA_SS_INPUTS/*
+
 mkdir $KOHYA_SS_INPUTS/100_$LORA_NAME/
 
 cp $COMFY_UI_INPUTS/*$LORA_NAME* $KOHYA_SS_INPUTS/100_$LORA_NAME/
@@ -25,8 +28,5 @@ accelerate launch --num_cpu_threads_per_process=2 "$KOHYA_SS_TRAIN_SCRIPT" --ena
 
 #rm -rf $KOHYA_SS_INPUTS/*
 cp $KOHYA_SS_OUTPUTS/$LORA_NAME.safetensors $COMFY_UI_LORAS/$LORA_NAME.safetensors
-
-rm -rf $KOHYA_SS_OUTPUTS/*
-rm -rf $KOHYA_SS_INPUTS/*
 
 echo completed > $OUT/$LORA_NAME.lock
