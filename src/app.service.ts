@@ -1,7 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
-import kill from 'tree-kill';
+const psTree = require('ps-tree');
+
+var kill = function (pid, signal = 'SIGKILL', callback) {
+    callback = callback || function () {};
+    var killTree = true;
+    if(killTree) {
+        psTree(pid, function (err, children) {
+            [pid].concat(
+                children.map(function (p) {
+                    return p.PID;
+                })
+            ).forEach(function (tpid) {
+                try { process.kill(tpid, signal) }
+                catch (ex) { }
+            });
+            callback();
+        });
+    } else {
+        try { process.kill(pid, signal) }
+        catch (ex) { }
+        callback();
+    }
+};
 
 export enum TRAIN_STATUS {
     WAITING = 'WAITING',
@@ -124,8 +146,7 @@ export class AppService {
             throw new Error('Train not started');
         }
 
-        train.process.kill();
-        kill(train.process.pid);
+        kill(train.process.pid, 'SIGKILL', () => {});
 
         return true;
     }
