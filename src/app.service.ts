@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 const psTree = require('ps-tree');
+import { exec } from 'child_process';
 
 var kill = function (pid, signal = 'SIGKILL', callback) {
-    callback = callback || function () {};
+    callback = callback || function () { };
     var killTree = true;
-    if(killTree) {
+    if (killTree) {
         psTree(pid, function (err, children) {
             [pid].concat(
                 children.map(function (p) {
@@ -108,30 +109,47 @@ export class AppService {
 
     startTrain = (train: ITrainQueue) => {
         return new Promise((res, rej) => {
+            // const childProcess = spawn(
+            //     `sh`, [`${this.configService.get('SERVICE_PATH')}/start.sh`, train.loraName],
+            //     { detached: true }
+            // );
+
+            // train.process = childProcess;
+
+            // childProcess.on('close', code => {
+            //     if (code === 0) {
+            //         train.status = TRAIN_STATUS.SUCCESS;
+            //         res(true);
+            //     } else {
+            //         train.status = TRAIN_STATUS.CANCELED;
+            //         rej('code not 0');
+            //     }
+            // }).on('error', (error) => {
+            //     train.status = TRAIN_STATUS.ERROR;
+            //     train.error = error?.message;
+
+            //     this.logger.error('startTrain', `exec error: ${error}`)
+            //     rej(error);
+            // });
             train.status = TRAIN_STATUS.IN_PROGRESS;
 
-            const childProcess = spawn(
-                `sh`, [`${this.configService.get('SERVICE_PATH')}/start.sh`, train.loraName],
-                { detached: true }
-            );
+            const proc = exec(`sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName}`,
+                (err, stdout, stderr) => {
+                    if (err) {
+                        this.logger.error('startTrain', err);
+                        train.status = TRAIN_STATUS.CANCELED;
+                        rej(err);
+                        return;
+                    }
 
-            train.process = childProcess;
+                    this.logger.log(`stdout: ${stdout}`);
+                    this.logger.log(`stderr: ${stderr}`);
 
-            childProcess.on('close', code => {
-                if (code === 0) {
                     train.status = TRAIN_STATUS.SUCCESS;
                     res(true);
-                } else {
-                    train.status = TRAIN_STATUS.CANCELED;
-                    rej('code not 0');
-                }
-            }).on('error', (error) => {
-                train.status = TRAIN_STATUS.ERROR;
-                train.error = error?.message;
+                });
 
-                this.logger.error('startTrain', `exec error: ${error}`)
-                rej(error);
-            });
+            train.process = proc;
         })
     }
 
@@ -146,7 +164,7 @@ export class AppService {
             throw new Error('Train not started');
         }
 
-        kill(train.process.pid, 'SIGKILL', () => {});
+        kill(train.process.pid, 'SIGKILL', () => { });
 
         return true;
     }
