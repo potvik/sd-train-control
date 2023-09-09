@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { HttpExceptionFilter } from './exception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,7 +13,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle(configService.get('name'))
-    .setDescription('1.country API description')
+    .setDescription('SD Train control')
     .setVersion(configService.get('version'))
     .build();
   const document = SwaggerModule.createDocument(app, config);
@@ -29,6 +30,8 @@ async function bootstrap() {
     origin: '*',
     credentials: true,
   });
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(configService.get('port'));
 }
