@@ -34,11 +34,24 @@ export enum TRAIN_STATUS {
     CANCELED = 'CANCELED',
 }
 
+enum TRAIN_MODEL {
+    BASE = 'BASE',
+    REAL = 'REAL',
+    ANIME = 'ANIME',
+}
+
+const TRAIN_MODEL_MAP: Record<TRAIN_MODEL, string> = {
+    BASE: 'runwayml/stable-diffusion-v1-5',
+    REAL: 'SG161222/Realistic_Vision_V2.0',
+    ANIME: 'https://huggingface.co/Linaqruf/anything-v3.0',
+}
+
 export interface ITrainQueue {
     loraName: string;
     status: TRAIN_STATUS;
     process?: ChildProcessWithoutNullStreams;
     error?: string;
+    trainModel: TRAIN_MODEL;
 }
 
 @Injectable()
@@ -52,14 +65,14 @@ export class AppService {
         this.trainLoop();
     }
 
-    addTrain = (loraName: string) => {
+    addTrain = (loraName: string, trainModel: TRAIN_MODEL) => {
         const train = this.getTrainInfo(loraName);
 
         if (train) {
             throw new Error('This train already in progress');
         }
 
-        this.queue.push({ loraName, status: TRAIN_STATUS.WAITING });
+        this.queue.push({ loraName, status: TRAIN_STATUS.WAITING, trainModel });
 
         return this.getTrainInfo(loraName);
     }
@@ -80,6 +93,7 @@ export class AppService {
                 loraName: train.loraName,
                 status: train.status,
                 error: train.error,
+                trainModel: train.trainModel,
                 numberInQueue
             } : undefined;
     }
@@ -89,6 +103,7 @@ export class AppService {
             loraName: train.loraName,
             status: train.status,
             error: train.error,
+            train: train.trainModel,
             numberInQueue: this.getTrainNumberInQueue(train.loraName)
         }))
     }
@@ -133,7 +148,10 @@ export class AppService {
             // });
             train.status = TRAIN_STATUS.IN_PROGRESS;
 
-            const proc = exec(`sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName}`,
+            const trainModelPath = TRAIN_MODEL_MAP[train.trainModel];
+
+            const proc = exec(
+                `sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName} ${trainModelPath}`,
                 (err, stdout, stderr) => {
                     if (err) {
                         this.logger.error('startTrain', err);

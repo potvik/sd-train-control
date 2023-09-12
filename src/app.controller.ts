@@ -31,9 +31,9 @@ export class AppController {
     return this.appService.stopTrain(loraName);
   }
 
-  @Get('/add/:lora')
-  train(@Param('lora') loraName) {
-    return this.appService.addTrain(loraName);
+  @Get('/add/:lora/:train_model')
+  train(@Param('lora') loraName, @Param('trainModel') trainModel) {
+    return this.appService.addTrain(loraName, trainModel);
   }
 
   @Get('/list')
