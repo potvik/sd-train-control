@@ -34,16 +34,16 @@ export enum TRAIN_STATUS {
     CANCELED = 'CANCELED',
 }
 
-enum TRAIN_MODEL {
-    BASE = 'BASE',
-    REAL = 'REAL',
-    ANIME = 'ANIME',
+export enum TRAIN_MODEL {
+    BASE = 'base',
+    REAL = 'real',
+    ANIME = 'anime',
 }
 
 const TRAIN_MODEL_MAP: Record<TRAIN_MODEL, string> = {
-    BASE: 'runwayml/stable-diffusion-v1-5',
-    REAL: 'SG161222/Realistic_Vision_V2.0',
-    ANIME: 'https://huggingface.co/Linaqruf/anything-v3.0',
+    base: 'runwayml/stable-diffusion-v1-5',
+    real: 'SG161222/Realistic_Vision_V2.0',
+    anime: 'https://huggingface.co/Linaqruf/anything-v3.0',
 }
 
 export interface ITrainQueue {
@@ -148,7 +148,7 @@ export class AppService {
             // });
             train.status = TRAIN_STATUS.IN_PROGRESS;
 
-            const trainModelPath = TRAIN_MODEL_MAP[train.trainModel];
+            const trainModelPath = TRAIN_MODEL_MAP[train.trainModel] || TRAIN_MODEL_MAP.base;
 
             const proc = exec(
                 `sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName} ${trainModelPath}`,
