@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 const psTree = require('ps-tree');
 import { exec } from 'child_process';
+import { getModelByParam } from './models-config';
 
 var kill = function (pid, signal = 'SIGKILL', callback) {
     callback = callback || function () { };
@@ -37,13 +38,11 @@ export enum TRAIN_STATUS {
 export enum TRAIN_MODEL {
     BASE = 'base',
     REAL = 'real',
-    ANIME = 'anime',
 }
 
 const TRAIN_MODEL_MAP: Record<TRAIN_MODEL, string> = {
     base: 'runwayml/stable-diffusion-v1-5',
     real: 'SG161222/Realistic_Vision_V2.0',
-    anime: 'https://huggingface.co/Linaqruf/anything-v3.0',
 }
 
 export interface ITrainQueue {
@@ -148,7 +147,15 @@ export class AppService {
             // });
             train.status = TRAIN_STATUS.IN_PROGRESS;
 
-            const trainModelPath = TRAIN_MODEL_MAP[train.trainModel] || TRAIN_MODEL_MAP.base;
+            let trainModelPath = TRAIN_MODEL_MAP[train.trainModel];
+
+            if (!trainModelPath) {
+                const model = getModelByParam(train.trainModel);
+
+                trainModelPath = model ?
+                    `/home/ubuntu/ComfyUI/models/checkpoints/${model.path}`
+                    : TRAIN_MODEL_MAP.base;
+            }
 
             const proc = exec(
                 `sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName} ${trainModelPath}`,
