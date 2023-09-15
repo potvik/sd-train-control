@@ -113,6 +113,6 @@ export class ModelsService {
     }
 
     getTotal = () => {
-        return this.civitAIModels.filter(m => this.storageModels.includes(m.version.id)).length;
+        return this.civitAIModels.filter(m => this.storageModels.includes(String(m.version.id))).length;
     }
 }
