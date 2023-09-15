@@ -119,6 +119,6 @@ export class ModelsService {
 
     getTotal = () => {
         return MODELS_CONFIGS
-            .filter(m => this.storageModels.find(name => name === m.path.split('.')[0]))
+            .filter(m => this.storageModels.find(name => name === m.path.split('.')[0])).length
     }
 }
