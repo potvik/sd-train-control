@@ -46,7 +46,7 @@ export class ModelsService {
                         rej(err);
                     }
 
-                    this.storageModels = files;
+                    this.storageModels = files.map(f => f.split('.')[0]);
 
                     res(files);
                 });
@@ -78,10 +78,10 @@ export class ModelsService {
 
                 const modelId = model.version.id;
 
-                if (!this.storageModels.includes(model.version.id)) {
+                if (!this.storageModels.find(id => id === model.version.id)) {
                     const url = `https://civitai.com/api/download/models/${modelId}`;
                     const tmpFilePath = `${this.storagePath}/last`;
-                    const filePath = `${this.storagePath}/${modelId}`;
+                    const filePath = `${this.storagePath}/${modelId}.safetensors`;
 
                     this.logger.log('Download: ', url, filePath);
 

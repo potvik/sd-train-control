@@ -34,7 +34,7 @@ export const downloadFile = async (url: string, filename: string) => {
                     rej(err);
                 })
                 .on('end', function () {
-                    this.logger.log('downloadFile', 'END');
+                    console.log('downloadFile', 'END');
                     res(true);
                 })
                 .pipe(fs.createWriteStream(filename));
