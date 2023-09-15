@@ -78,7 +78,7 @@ export class ModelsService {
 
                 const modelId = String(model.version.id);
 
-                if (!this.storageModels.find(id => id === model.version.id)) {
+                if (!this.storageModels.includes(modelId)) {
                     const url = `https://civitai.com/api/download/models/${modelId}`;
                     const tmpFilePath = `${this.storagePath}/last`;
                     const filePath = `${this.storagePath}/${modelId}.safetensors`;
