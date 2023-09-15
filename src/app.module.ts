@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import configuration from './config';
 import { Web3Module } from 'nest-web3';
+import { ModelsModule } from './models/models.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { Web3Module } from 'nest-web3';
       load: [configuration],
     }),
     Web3Module,
-    PrometheusModule.register()
+    PrometheusModule.register(),
+    ModelsModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,5 +7,6 @@ export default () => ({
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   STABILITY_API_KEY: process.env.STABILITY_API_KEY,
   SD_API_URL: process.env.SD_API_URL,
-  SERVICE_PATH: '/home/ubuntu/sd-train-control'
+  SERVICE_PATH: '/home/ubuntu/sd-train-control',
+  STORAGE_PATH: process.env.STORAGE_PATH
 });
