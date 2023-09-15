@@ -111,4 +111,8 @@ export class ModelsService {
     getStorageModels = () => {
         return this.storageModels;
     }
+
+    getTotal = () => {
+        return this.civitAIModels.filter(m => this.storageModels.includes(m.version.id)).length;
+    }
 }

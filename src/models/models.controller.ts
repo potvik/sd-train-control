@@ -31,10 +31,15 @@ export class ModelsController {
     return this.modelsService.getStorageModels();
   }
 
-  @Get('/gpu')
-  gpu() {
+  @Get('/total')
+  total() {
+    return this.modelsService.getTotal();
+  }
+
+  @Get('/disk')
+  disk() {
     return new Promise((res, rej) => {
-      exec(`nvidia-smi --query-gpu=utilization.gpu --format=csv`,
+      exec(`df -h | grep /dev/root`,
         (error, stdout, stderr) => {
           res({ status: stdout });
 
