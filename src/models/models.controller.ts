@@ -41,7 +41,7 @@ export class ModelsController {
     return new Promise((res, rej) => {
       exec(`df -h | grep /dev/root`,
         (error, stdout, stderr) => {
-          res({ status: stdout });
+          res({ status: stdout, models: this.modelsService.getTotal() });
 
           if (error !== null) {
             console.log(`exec error: ${error}`);
