@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 const psTree = require('ps-tree');
 import { exec } from 'child_process';
-import { getModelByParam } from './models-config';
+import { getModelByParam } from './models/models-config';
 
 var kill = function (pid, signal = 'SIGKILL', callback) {
     callback = callback || function () { };

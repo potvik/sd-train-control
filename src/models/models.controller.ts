@@ -26,6 +26,11 @@ export class ModelsController {
     return this.modelsService.getModels();
   }
 
+  @Get('/list-failed')
+  failedModelsList() {
+    return this.modelsService.getFailedModels();
+  }
+
   @Get('/storage')
   storage() {
     return this.modelsService.getStorageModels();

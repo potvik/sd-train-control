@@ -3,23 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { HttpService } from '@nestjs/axios';
 import { civitaiReqListModelsParams, downloadFile, renameFile, modelExample } from './helpers';
+import { IModel, MODELS_CONFIGS } from './models-config';
 
 export interface IStorageModel {
     id: string;
     hash: string;
-}
-
-export interface IModel {
-    path: string
-    name: string
-    id: string
-    hash: string
-    shortName: string
-    link: string
-    baseModel: 'SD 1.5' | 'SDXL 1.0'
-    aliases: string[]
-    defaultPrompt: string
-    defaultImageUrl?: string
 }
 
 export type CivitAIModel = typeof modelExample;
@@ -34,7 +22,7 @@ export class ModelsService {
     storageModels: string[] = [];
     syncStorageModelsInterval = 10000;
 
-    civitAIModels = [];
+    civitAIModels: CivitAIModel[] = [];
 
     constructor(
         private configService: ConfigService,
@@ -43,7 +31,7 @@ export class ModelsService {
         this.storagePath = configService.get('STORAGE_PATH') || "/home/ubuntu";
 
         Promise.all([
-            this.loadCivitAIModelsList(),
+            // this.loadCivitAIModelsList(),
             this.loadStorageModels()
         ]).then(
             () => this.syncModels()
@@ -85,12 +73,12 @@ export class ModelsService {
 
     syncModels = async () => {
         try {
-            this.logger.log("syncModels", this.civitAIModels.length);
+            this.logger.log("syncModels", MODELS_CONFIGS.length);
 
-            for (let i = 0; i < this.civitAIModels.length; i++) {
-                const model = this.civitAIModels[i];
+            for (let i = 0; i < MODELS_CONFIGS.length; i++) {
+                const model = MODELS_CONFIGS[i];
 
-                const modelId = String(model.version.id);
+                const modelId = String(model.path.split('.')[0]);
 
                 if (!this.storageModels.includes(modelId)) {
                     const url = `https://civitai.com/api/download/models/${modelId}`;
@@ -116,21 +104,13 @@ export class ModelsService {
     }
 
     getModels = (): IModel[] => {
-        return this.civitAIModels
-            .filter(m => this.storageModels.includes(String(m.version.id)))
-            .map((m, idx) => ({
-                meta: m,
-                path: `${m.version.id}.safetensors`,
-                name: m.name,
-                id: m.id,
-                hash: m.hash,
-                shortName: m.name,
-                link: `https://civitai.com/models/${m.id}`,
-                baseModel: m.version.baseModel,
-                aliases: [String(idx + 1), String(m.id), m.hash, String(m.version.id)],
-                defaultPrompt: 'a young woman, street, laughing, ponytails, dramatic, complex background, cinematic',
-                // defaultImageUrl?: string
-            }));
+        return MODELS_CONFIGS
+            .filter(m => this.storageModels.find(name => name === m.path.split('.')[0]))
+    }
+
+    getFailedModels = (): IModel[] => {
+        return MODELS_CONFIGS
+            .filter(m => !this.storageModels.find(name => name === m.path.split('.')[0]))
     }
 
     getStorageModels = () => {
@@ -138,6 +118,7 @@ export class ModelsService {
     }
 
     getTotal = () => {
-        return this.civitAIModels.filter(m => this.storageModels.includes(String(m.version.id))).length;
+        return MODELS_CONFIGS
+            .filter(m => this.storageModels.find(name => name === m.path.split('.')[0]))
     }
 }
