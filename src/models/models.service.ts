@@ -1,14 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
-import * as crypto from 'crypto';
 import { HttpService } from '@nestjs/axios';
-import { civitaiReqListModelsParams, downloadFile, renameFile } from './helpers';
+import { civitaiReqListModelsParams, downloadFile, renameFile, modelExample } from './helpers';
 
 export interface IStorageModel {
     id: string;
     hash: string;
 }
+
+export interface IModel {
+    path: string
+    name: string
+    id: string
+    hash: string
+    shortName: string
+    link: string
+    baseModel: 'SD 1.5' | 'SDXL 1.0'
+    aliases: string[]
+    defaultPrompt: string
+    defaultImageUrl?: string
+}
+
+export type CivitAIModel = typeof modelExample;
 
 @Injectable()
 export class ModelsService {
@@ -101,11 +115,22 @@ export class ModelsService {
         setTimeout(this.syncModels, 1000);
     }
 
-    getModels = () => {
-        return this.civitAIModels.map(m => ({
-            ...m,
-            supported: this.storageModels.includes(m.version.id)
-        }));
+    getModels = (): IModel[] => {
+        return this.civitAIModels
+            .filter(m => this.storageModels.includes(String(m.version.id)))
+            .map((m, idx) => ({
+                meta: m,
+                path: `${m.version.id}.safetensors`,
+                name: m.name,
+                id: m.id,
+                hash: m.hash,
+                shortName: m.name,
+                link: `https://civitai.com/models/${m.id}`,
+                baseModel: m.version.baseModel,
+                aliases: [String(idx + 1), String(m.id), m.hash, String(m.version.id)],
+                defaultPrompt: 'a young woman, street, laughing, ponytails, dramatic, complex background, cinematic',
+                // defaultImageUrl?: string
+            }));
     }
 
     getStorageModels = () => {
