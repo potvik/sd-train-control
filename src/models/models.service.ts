@@ -76,7 +76,7 @@ export class ModelsService {
             for (let i = 0; i < this.civitAIModels.length; i++) {
                 const model = this.civitAIModels[i];
 
-                const modelId = model.version.id;
+                const modelId = String(model.version.id);
 
                 if (!this.storageModels.find(id => id === model.version.id)) {
                     const url = `https://civitai.com/api/download/models/${modelId}`;

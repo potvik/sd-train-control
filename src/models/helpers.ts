@@ -27,7 +27,7 @@ export const downloadFile = async (url: string, filename: string) => {
                 // lengthHeader: 'x-transfer-length'  // Length header to use, defaults to content-length 
             })
                 .on('progress', (state) => {
-                    console.log('progress', state);
+                    // console.log('progress', state);
                 })
                 .on('error', function (err) {
                     console.error('downloadFile', err);
