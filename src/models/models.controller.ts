@@ -4,41 +4,36 @@ import { ConfigService } from '@nestjs/config';
 import { exec } from 'child_process';
 import { ModelsService } from './models.service';
 
-@ApiTags('models')
-@Controller('models')
+@ApiTags()
+@Controller()
 export class ModelsController {
   constructor(
     private readonly configService: ConfigService,
     private readonly modelsService: ModelsService
   ) { }
-  @Get('/version')
-  getVersion() {
-    return this.configService.get('version');
-  }
-
-  @Get('/config')
-  getConfig() {
-    return {};
-  }
-
-  @Get('/list')
+  @Get('/models/list')
   modelsList() {
     return this.modelsService.getModels();
   }
 
-  @Get('/list-failed')
+  @Get('/models/list-failed')
   failedModelsList() {
     return this.modelsService.getFailedModels();
   }
 
-  @Get('/storage')
+  @Get('/models/storage')
   storage() {
     return this.modelsService.getStorageModels();
   }
 
-  @Get('/total')
+  @Get('/models/total')
   total() {
     return this.modelsService.getTotal();
+  }
+
+  @Get('/system_stats')
+  stats() {
+    return this.modelsService.getStats();
   }
 
   @Get('/disk')

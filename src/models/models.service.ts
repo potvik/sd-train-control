@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { HttpService } from '@nestjs/axios';
-import { civitaiReqListModelsParams, downloadFile, renameFile, modelExample } from './helpers';
+import { civitaiReqListModelsParams, downloadFile, renameFile, modelExample, getFilesList } from './helpers';
 import { IModel, MODELS_CONFIGS } from './models-config';
+import { exec } from 'child_process';
 
 export interface IStorageModel {
     id: string;
@@ -16,19 +17,27 @@ export type CivitAIModel = typeof modelExample;
 export class ModelsService {
     private readonly logger = new Logger(ModelsService.name);
 
+    modelsList = [];
+    lorasList = [];
+    controlnetsList = [];
+
     storagePath = "/home/ubuntu";
     civitAIApiUrl = ''
 
     storageModels: string[] = [];
     syncStorageModelsInterval = 10000;
 
+    syncDiscInterval = 100000;
+
     civitAIModels: CivitAIModel[] = [];
+
+    discUsage = '';
 
     constructor(
         private configService: ConfigService,
         private readonly httpService: HttpService
     ) {
-        this.storagePath = configService.get('STORAGE_PATH') || "/home/ubuntu";
+        this.storagePath = configService.get('MODELS_PATH') || "/home/ubuntu";
 
         Promise.all([
             // this.loadCivitAIModelsList(),
@@ -36,6 +45,40 @@ export class ModelsService {
         ]).then(
             () => this.syncModels()
         );
+
+        this.syncFolders();
+        this.syncDisk();
+    }
+
+    syncDisk = () => {
+        return new Promise((res, rej) => {
+          exec(`df -h | grep /dev/root`,
+            (error, stdout, stderr) => {
+              this.discUsage = stdout;
+
+              setTimeout(() => this.syncDisk(), this.syncDiscInterval);
+    
+              if (error !== null) {
+                console.log(`exec error: ${error}`);
+              }
+            });
+        })
+      }
+
+    syncFolders = async () => {
+        try {
+            this.lorasList = await getFilesList(this.configService.get('LORAS_PATH'));
+        } catch (e) { }
+
+        try {
+            this.modelsList = await getFilesList(this.configService.get('MODELS_PATH'));
+        } catch (e) { }
+
+        try {
+            this.controlnetsList = await getFilesList(this.configService.get('CONTROLNETS_PATH'));
+        } catch (e) { }
+
+        setTimeout(() => this.syncFolders(), this.syncStorageModelsInterval);
     }
 
     loadStorageModels = () => {
@@ -120,5 +163,17 @@ export class ModelsService {
     getTotal = () => {
         return MODELS_CONFIGS
             .filter(m => this.storageModels.find(name => name === m.path.split('.')[0])).length
+    }
+
+    getStats = () => {
+        return {
+            models: this.modelsList,
+            loras: this.lorasList,
+            controlnets: this.controlnetsList,
+            comfyAPI: this.configService.get('COMFY_API_URL'),
+            trainAPI: this.configService.get('TRAIN_API_URL'),
+            discUsage: this.discUsage, 
+            total: this.getTotal, 
+        }
     }
 }

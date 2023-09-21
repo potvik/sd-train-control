@@ -8,5 +8,10 @@ export default () => ({
   STABILITY_API_KEY: process.env.STABILITY_API_KEY,
   SD_API_URL: process.env.SD_API_URL,
   SERVICE_PATH: '/home/ubuntu/sd-train-control',
-  STORAGE_PATH: process.env.STORAGE_PATH
+
+  MODELS_PATH: process.env.MODELS_PATH,
+  LORAS_PATH: process.env.LORAS_PATH,
+  CONTROLNETS_PATH: process.env.CONTROLNETS_PATH,
+  COMFY_API_URL: process.env.COMFY_API_URL,
+  TRAIN_API_URL: process.env.TRAIN_API_URL,
 });

@@ -57,6 +57,25 @@ export const renameFile = (oldPath, newPath) => {
     });
 }
 
+export const getFilesList = async (path: string): Promise<string[]> => {
+    return new Promise((res, rej) => {
+        try {
+            fs.readdir(path, (err, files) => {
+                //handling error
+                if (err) {
+                    console.error('Unable to scan directory: ' + err);
+                    rej(err);
+                }
+
+                res(files);
+            });
+        } catch (err) {
+            console.error('getFilesList', err);
+            rej(err);
+        }
+    });
+}
+
 export const modelExample = {
     "id": 4384,
     "name": "DreamShaper",
