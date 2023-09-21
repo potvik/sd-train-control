@@ -1,6 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
+const psTree = require('ps-tree');
+import { exec } from 'child_process';
+import { getModelByParam } from './models/models-config';
+
+var kill = function (pid, signal = 'SIGKILL', callback) {
+    callback = callback || function () { };
+    var killTree = true;
+    if (killTree) {
+        psTree(pid, function (err, children) {
+            [pid].concat(
+                children.map(function (p) {
+                    return p.PID;
+                })
+            ).forEach(function (tpid) {
+                try { process.kill(tpid, signal) }
+                catch (ex) { }
+            });
+            callback();
+        });
+    } else {
+        try { process.kill(pid, signal) }
+        catch (ex) { }
+        callback();
+    }
+};
 
 export enum TRAIN_STATUS {
     WAITING = 'WAITING',
@@ -10,11 +35,22 @@ export enum TRAIN_STATUS {
     CANCELED = 'CANCELED',
 }
 
+export enum TRAIN_MODEL {
+    BASE = 'base',
+    REAL = 'real',
+}
+
+const TRAIN_MODEL_MAP: Record<TRAIN_MODEL, string> = {
+    base: 'runwayml/stable-diffusion-v1-5',
+    real: 'SG161222/Realistic_Vision_V2.0',
+}
+
 export interface ITrainQueue {
     loraName: string;
     status: TRAIN_STATUS;
     process?: ChildProcessWithoutNullStreams;
     error?: string;
+    trainModel: TRAIN_MODEL;
 }
 
 @Injectable()
@@ -28,14 +64,14 @@ export class AppService {
         this.trainLoop();
     }
 
-    addTrain = (loraName: string) => {
+    addTrain = (loraName: string, trainModel: TRAIN_MODEL) => {
         const train = this.getTrainInfo(loraName);
 
         if (train) {
             throw new Error('This train already in progress');
         }
 
-        this.queue.push({ loraName, status: TRAIN_STATUS.WAITING });
+        this.queue.push({ loraName, status: TRAIN_STATUS.WAITING, trainModel });
 
         return this.getTrainInfo(loraName);
     }
@@ -56,6 +92,7 @@ export class AppService {
                 loraName: train.loraName,
                 status: train.status,
                 error: train.error,
+                trainModel: train.trainModel,
                 numberInQueue
             } : undefined;
     }
@@ -65,6 +102,7 @@ export class AppService {
             loraName: train.loraName,
             status: train.status,
             error: train.error,
+            train: train.trainModel,
             numberInQueue: this.getTrainNumberInQueue(train.loraName)
         }))
     }
@@ -85,30 +123,58 @@ export class AppService {
 
     startTrain = (train: ITrainQueue) => {
         return new Promise((res, rej) => {
+            // const childProcess = spawn(
+            //     `sh`, [`${this.configService.get('SERVICE_PATH')}/start.sh`, train.loraName],
+            //     { detached: true }
+            // );
+
+            // train.process = childProcess;
+
+            // childProcess.on('close', code => {
+            //     if (code === 0) {
+            //         train.status = TRAIN_STATUS.SUCCESS;
+            //         res(true);
+            //     } else {
+            //         train.status = TRAIN_STATUS.CANCELED;
+            //         rej('code not 0');
+            //     }
+            // }).on('error', (error) => {
+            //     train.status = TRAIN_STATUS.ERROR;
+            //     train.error = error?.message;
+
+            //     this.logger.error('startTrain', `exec error: ${error}`)
+            //     rej(error);
+            // });
             train.status = TRAIN_STATUS.IN_PROGRESS;
 
-            const childProcess = spawn(
-                `sh`, [`${this.configService.get('SERVICE_PATH')}/start.sh`, train.loraName],
-                { detached: true }
-            );
+            let trainModelPath = TRAIN_MODEL_MAP[train.trainModel];
 
-            train.process = childProcess;
+            if (!trainModelPath) {
+                const model = getModelByParam(train.trainModel);
 
-            childProcess.on('close', code => {
-                if (code === 0) {
+                trainModelPath = model ?
+                    `/home/ubuntu/ComfyUI/models/checkpoints/${model.path}`
+                    : TRAIN_MODEL_MAP.base;
+            }
+
+            const proc = exec(
+                `sh ${this.configService.get('SERVICE_PATH')}/start.sh ${train.loraName} ${trainModelPath}`,
+                (err, stdout, stderr) => {
+                    if (err) {
+                        this.logger.error('startTrain', err);
+                        train.status = TRAIN_STATUS.CANCELED;
+                        rej(err);
+                        return;
+                    }
+
+                    this.logger.log(`stdout: ${stdout}`);
+                    this.logger.log(`stderr: ${stderr}`);
+
                     train.status = TRAIN_STATUS.SUCCESS;
                     res(true);
-                } else {
-                    train.status = TRAIN_STATUS.CANCELED;
-                    rej('code not 0');
-                }
-            }).on('error', (error) => {
-                train.status = TRAIN_STATUS.ERROR;
-                train.error = error?.message;
+                });
 
-                this.logger.error('startTrain', `exec error: ${error}`)
-                rej(error);
-            });
+            train.process = proc;
         })
     }
 
@@ -123,6 +189,8 @@ export class AppService {
             throw new Error('Train not started');
         }
 
-        return train.process.kill();
+        kill(train.process.pid, 'SIGKILL', () => { });
+
+        return true;
     }
 }

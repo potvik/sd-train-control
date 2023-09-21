@@ -2,7 +2,7 @@ import { Controller, Get, Param, UseFilters } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { exec } from 'child_process';
-import { AppService } from './app.service';
+import { AppService, TRAIN_MODEL } from './app.service';
 
 @ApiTags('app')
 @Controller()
@@ -31,9 +31,9 @@ export class AppController {
     return this.appService.stopTrain(loraName);
   }
 
-  @Get('/add/:lora')
-  train(@Param('lora') loraName) {
-    return this.appService.addTrain(loraName);
+  @Get('/add/:lora/:trainModel')
+  train(@Param() params: { lora: string; trainModel: TRAIN_MODEL }) {
+    return this.appService.addTrain(params.lora, params.trainModel);
   }
 
   @Get('/list')
